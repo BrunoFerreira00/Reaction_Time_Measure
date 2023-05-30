@@ -56,8 +56,8 @@ fix_result:
     mov r1, #0x89 ; 137 ms
     cmp r1, r3
     bhs out_of_range
-    movt r1, #0x01
-    mov r1, #0x07 ; 263 ms
+    mov r1, #0x07 
+    movt r1, #0x01; 263 ms
     cmp r3, r1
     bhs out_of_range
     mov r1, #0xC8 ; 200 ms
@@ -66,13 +66,15 @@ fix_result:
 
 negative:
     sub r3, r3, r1
+    lsl r3, r3, #1 ;para colocar o1..o7
     mov r2, #outport_addr
-    str r1, [r2]
+    str r3, [r2]
     ;delay 5 segundos
     ;b init
 
 positive:
     sub r3, r3 , r1
+    lsl r3, r3, #1 ;para colocar o1..o7
     str r3, [r2]
     ;delay 5 segundos
     ;b init
