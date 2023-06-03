@@ -1,11 +1,9 @@
-
     .equ INITIAL_OUTPORT, 0xFF
     .equ INITIAL_USER, 0x00
     .equ USER_MASk, 0x01
     .equ INPORT_ADDRESS, 0xFF80
     .equ OUTPORT_ADDRESS, 0xFFC0
 	.equ PTC_ADDRESS,  0xFF78        ; Endereco do circuito pTC
-    .equ	OUTPORT_INIT_VAL, 0           ; Valor inicial do porto de saida
 
     .equ PTC_TCR, 0                    ; Deslocamento do registo TCR do pTC
 	.equ PTC_TMR, 2                    ; Deslocamento do registo TMR do pTC
@@ -40,7 +38,7 @@ isr_addr:
 	.text
 
 main:
-	mov	r0, #OUTPORT_INIT_VAL
+	mov	r0, #INITIAL_OUTPORT
 	bl	outport_init
 	mov	r0, #SYSCLK_FREQ
 	bl	ptc_init
@@ -48,39 +46,8 @@ main:
 	mov	r1, #CPSR_BIT_I
 	orr	r0, r0, r1
 	msr	cpsr, r0
-main_loop:
-	mov	r0, #LED0_MASK
-	bl	outport_set_bits
-	mov	r0, #BLINK_TIME
-	bl	delay
-	mov	r0, #LED0_MASK
-	bl	outport_clear_bits
-	mov	r0, #BLINK_TIME
-	bl	delay
-	b	main_loop
-
-outport_set_bits:
-	push	lr
-	ldr	r1, outport_img_addr
-	ldrb	r2, [r1, #0]
-	orr	r0, r2, r0
-	;lsl r0, r0 , #1	
-	strb	r0, [r1, #0]
-	bl	outport_write
-	pop	pc
 
 
-outport_clear_bits:
-	push	lr
-	ldr	r1, outport_img_addr
-	ldrb	r2, [r1, #0]
-	mvn	r0, r0
-	and	r0, r2, r0
-	;lsl r0, r0 , #1
-	strb	r0, [r1]
-	bl	outport_write
-	pop	pc
-    
 ;r1 temp
 init:
     mov r0, #INITIAL_OUTPORT
@@ -258,16 +225,6 @@ sysclk_get_ticks:
 
 sysclk_addr:
     .word sysclk
-
-inport_read:
-	ldr	r1, inport_addr
-	ldrb	r0, [r1, #0]
-	mov	pc, lr
-
-inport_addr:
-	.word	INPORT_ADDRESS
-
-
 
 delay:
     mov r2 , #0
