@@ -67,7 +67,7 @@ delay_time:
     push r0
     mov r0, #0x01
     bl outport_write
-    str r1, [r2]
+    bl inport_read
     mov r2 , r0
     lsr r2 , r2 , #4
     mov r1 , #0x01

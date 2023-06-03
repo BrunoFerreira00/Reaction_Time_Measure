@@ -1,4 +1,4 @@
-P16 assembler v1.4.0 (Mar  6 2023)	AC_TR4_G09_T24D.lst	Sat Jun 03 18:12:52 2023
+P16 assembler v1.4.0 (Mar  6 2023)	AC_TR4_G09_T24D.lst	Sat Jun 03 18:18:36 2023
 
 Sections
 Index   Name            Address   Size
@@ -132,7 +132,7 @@ Code listing
   67 0030 00 24	    push r0
   68 0032 10 60	    mov r0, #0x01
   69 0034 3F 5C	    bl outport_write
-  70 0036 21 20	    str r1, [r2]
+  70 0036 3B 5C	    bl inport_read
   71 0038 02 B0	    mov r2 , r0
   72 003A 22 EA	    lsr r2 , r2 , #4
   73 003C 11 60	    mov r1 , #0x01
