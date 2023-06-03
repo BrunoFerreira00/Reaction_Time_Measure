@@ -51,11 +51,9 @@ main:
 
 ;r1 temp
 init:
-    mov r1, #INITIAL_OUTPORT
-    ldr r2, outport_addr
-    str r1, [r2]
-    ldr r2 , inport_addr
-    ldr r0, [r2]
+    mov r0, #INITIAL_OUTPORT
+    bl outport_write
+    bl inport_read
     mov r1, #INITIAL_USER
     cmp r0,r1 
     bne init ;1 bloco
@@ -67,8 +65,9 @@ check_USER:
 
 ;r2 Delay Time
 delay_time:
-    mov r1, #0x01
-    ldr r2 , outport_addr
+    push r0
+    mov r0, #0x01
+    bl outport_write
     str r1, [r2]
     mov r2 , r0
     lsr r2 , r2 , #4
@@ -79,6 +78,7 @@ delay_time:
     cmp r2, r1
     bhs delay_time;3 bloco
     mov r3, #0
+    pop r0
 
 multiplication:
     add r3, r3, #4
@@ -136,6 +136,8 @@ out_of_range:
     bl delay
     b init
 
+
+
 outport_init:
 	push	lr
 	ldr	r1, outport_img_addr
@@ -146,6 +148,12 @@ outport_init:
 outport_img_addr:
 	.word	outport_img
 
+inport_read:
+	ldr	r1, inport_addr
+	ldrb	r0, [r1, #0]
+	mov	pc, lr
+
+    
 outport_write:
 	ldr	r1, outport_addr
 	strb	r0, [r1, #0]
@@ -153,6 +161,10 @@ outport_write:
 
 outport_addr:
     .word OUTPORT_ADDRESS
+
+
+inport_addr:
+    .word INPORT_ADDRESS
 
 ptc_addr_addr:
     .word PTC_ADDR
@@ -235,8 +247,6 @@ PTC_ADDR:
     .word    PTC_ADDRESS
 
 
-inport_addr:
-    .word INPORT_ADDRESS
 
 
 
