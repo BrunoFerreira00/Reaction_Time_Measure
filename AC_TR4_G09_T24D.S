@@ -80,24 +80,29 @@ delay_time:
     pop r0
 
 multiplication:
+    push r0
     add r3, r3, #4
     sub r2, r2, #1
     mov r1, #0
     cmp r2, r1
     bne multiplication
+    bl sysclk_get_ticks
     bl delay
+    pop r0
 
-time_measure:
+
+    mov r3, #0
     mov r1, #0x00
     ldr r2 , outport_addr
     str r1, [r2]
-    mov r3, #0
+time_measure:
+    push r0
     add r3, r3, #1
     mov r1, #0x01
     and r0, r0 , r1
     cmp r0, r1
     beq time_measure
-
+    pop r0
 
 fix_result:
     mov r1, #0x89 ; 137 ms
@@ -117,6 +122,7 @@ negative:
     ldr r2, outport_addr
     str r3, [r2]
     mov r3, #20
+    bl sysclk_get_ticks
     bl delay
     b init
 
@@ -125,6 +131,7 @@ positive:
     lsl r3, r3, #1 ;para colocar o1..o7
     str r3, [r2]
     mov r3, #20
+    bl sysclk_get_ticks
     bl delay
     b init
 
@@ -132,6 +139,7 @@ out_of_range:
     mov r1, #0x80
     str r1, [r2]
     mov r3, #20
+    bl sysclk_get_ticks
     bl delay
     b init
 
@@ -217,11 +225,9 @@ isr:
     movs    pc, lr
 
 sysclk_get_ticks:
-    push r0
 	ldr    r0, sysclk_addr
     ldr    r0, [r0, #0]
     mov    pc, lr
-    pop r0
 
 sysclk_addr:
     .word sysclk
@@ -237,9 +243,13 @@ delay_loop:
     bne delay_loop
     sub r3, r3, #1
     cmp r3, r2
-    bne delay_loop
+    bne restart
 delay_end:
     mov pc, lr
+
+restart:
+    bl sysclk_get_ticks
+    b delay
 
 
 PTC_ADDR:
