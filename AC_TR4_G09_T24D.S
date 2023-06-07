@@ -120,7 +120,7 @@ negative:
     ldr r2, outport_addr
     str r3, [r2]
     mov r3, #20
-    mov r0, SYSCLK_FREQ
+    mov r0, #SYSCLK_FREQ
     bl delay
     b init
 
@@ -129,7 +129,7 @@ positive:
     lsl r3, r3, #1 ;para colocar o1..o7
     str r3, [r2]
     mov r3, #20
-    mov r0, SYSCLK_FREQ
+    mov r0, #SYSCLK_FREQ
     bl delay
     b init
 
@@ -137,7 +137,7 @@ out_of_range:
     mov r1, #0x80
     str r1, [r2]
     mov r3, #20
-    mov r0, SYSCLK_FREQ
+    mov r0, #SYSCLK_FREQ
     bl delay
     b init
 
