@@ -55,7 +55,7 @@ init:
     mov r1, #INITIAL_USER
     and r0, r0, r1
     cmp r0,r1 
-    bne init ;1 bloco
+    beq init ;1 bloco
     pop r0
 
 check_USER:

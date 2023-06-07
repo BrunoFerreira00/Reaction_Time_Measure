@@ -1,4 +1,4 @@
-P16 assembler v1.4.0 (Mar  6 2023)	AC_TR4_G09_T24D.lst	Wed Jun 07 11:47:24 2023
+P16 assembler v1.4.0 (Mar  6 2023)	AC_TR4_G09_T24D.lst	Wed Jun 07 11:49:57 2023
 
 Sections
 Index   Name            Address   Size
@@ -119,7 +119,7 @@ Code listing
   55 0026 01 60	    mov r1, #INITIAL_USER
   56 0028 80 C0	    and r0, r0, r1
   57 002A 80 B8	    cmp r0,r1 
-  58 002C F8 47	    bne init ;1 bloco
+  58 002C F8 43	    beq init ;1 bloco
   59 002E 00 04	    pop r0
   60           	
   61           	check_USER:
