@@ -13,9 +13,7 @@
 	.equ PTC_CMD_STOP, 1               ; Comando para parar a contagem no pTC
 
 	.equ SYSCLK_FREQ, 0xFA             ; Intervalo de contagem do circuito pTC
-                                          ; que suporta a implementação do sysclk
-	.equ LED0_MASK, 1                  ; Mascara para o LED O0 da placa SDP16
-	.equ BLINK_TIME, 5                 
+                                          ; que suporta a implementação do sysclk                          
     .equ STACK_SIZE, 64                ; Dimensao do stack - 64 B
     .equ CPSR_BIT_I, 0b010000          ; Mascara para o bit I do registo CPSR
 ;----------------------------------------------------------------------------
@@ -86,7 +84,7 @@ multiplication:
     mov r1, #0
     cmp r2, r1
     bne multiplication
-    bl sysclk_get_ticks
+    mov r0, #SYSCLK_FREQ
     bl delay
     pop r0
 
@@ -122,7 +120,7 @@ negative:
     ldr r2, outport_addr
     str r3, [r2]
     mov r3, #20
-    bl sysclk_get_ticks
+    mov r0, SYSCLK_FREQ
     bl delay
     b init
 
@@ -131,7 +129,7 @@ positive:
     lsl r3, r3, #1 ;para colocar o1..o7
     str r3, [r2]
     mov r3, #20
-    bl sysclk_get_ticks
+    mov r0, SYSCLK_FREQ
     bl delay
     b init
 
@@ -139,7 +137,7 @@ out_of_range:
     mov r1, #0x80
     str r1, [r2]
     mov r3, #20
-    bl sysclk_get_ticks
+    mov r0, SYSCLK_FREQ
     bl delay
     b init
 
@@ -248,7 +246,7 @@ delay_end:
     mov pc, lr
 
 restart:
-    bl sysclk_get_ticks
+    mov r0 , #SYSCLK_FREQ
     b delay
 
 
