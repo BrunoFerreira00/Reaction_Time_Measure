@@ -48,17 +48,23 @@ main:
 
 ;r1 temp
 init:
+    push r0
     mov r0, #INITIAL_OUTPORT
     bl outport_write
     bl inport_read
     mov r1, #INITIAL_USER
+    and r0, r0, r1
     cmp r0,r1 
     bne init ;1 bloco
+    pop r0
 
 check_USER:
+    push r0
     mov r1, #USER_MASk
+    and r0, r0, r1
     cmp r0, r1 ;2 bloco
     bne check_USER;transiçao para o terceiro
+    pop r0
 
 ;r2 Delay Time
 delay_time:
