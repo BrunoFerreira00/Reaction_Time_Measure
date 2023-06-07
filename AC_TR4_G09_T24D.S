@@ -1,5 +1,4 @@
     .equ INITIAL_OUTPORT, 0xFF
-    .equ INITIAL_USER, 0x00
     .equ USER_MASk, 0x01
     .equ INPORT_ADDRESS, 0xFF80
     .equ OUTPORT_ADDRESS, 0xFFC0
@@ -48,43 +47,38 @@ main:
 
 ;r1 temp
 init:
-    push r0
     mov r0, #INITIAL_OUTPORT
     bl outport_write
     bl inport_read
-    mov r1, #INITIAL_USER
+    mov r1, #USER_MASk
     and r0, r0, r1
     cmp r0,r1 
     beq init ;1 bloco
-    pop r0
 
 check_USER:
-    push r0
+    bl inport_read
     mov r1, #USER_MASk
     and r0, r0, r1
     cmp r0, r1 ;2 bloco
-    bne check_USER;transiçao para o terceiro
-    pop r0
+    bne check_USER ;transiçao para o terceiro
+
 
 ;r2 Delay Time
 delay_time:
-    push r0
     mov r0, #0x01
     bl outport_write
     bl inport_read
     mov r2 , r0
     lsr r2 , r2 , #4
-    mov r1 , #0x01
+    mov r1 , #0x00
     cmp r1 , r2
-    bhs delay_time 
-    mov r1 , #0x0A
+    bhs init
+    mov r1 , #0x0B
     cmp r2, r1
-    bhs delay_time;3 bloco
+    bhs init;3 bloco
     mov r3, #0
-    pop r0
 
 multiplication:
-    push r0
     add r3, r3, #4
     sub r2, r2, #1
     mov r1, #0
@@ -92,21 +86,17 @@ multiplication:
     bne multiplication
     mov r0, #SYSCLK_FREQ
     bl delay
-    pop r0
-
-
     mov r3, #0
-    mov r1, #0x00
-    ldr r2 , outport_addr
-    str r1, [r2]
+    mov r0, #0x00
+    bl outport_write
+
 time_measure:
-    push r0
+    bl inport_read 
     add r3, r3, #1
     mov r1, #0x01
     and r0, r0 , r1
     cmp r0, r1
     beq time_measure
-    pop r0
 
 fix_result:
     mov r1, #0x89 ; 137 ms
@@ -123,8 +113,8 @@ fix_result:
 negative:
     sub r3, r3, r1
     lsl r3, r3, #1 ;para colocar o1..o7
-    ldr r2, outport_addr
-    str r3, [r2]
+    mov r0, r3
+    bl outport_write
     mov r3, #20
     mov r0, #SYSCLK_FREQ
     bl delay
@@ -133,15 +123,16 @@ negative:
 positive:
     sub r3, r3 , r1
     lsl r3, r3, #1 ;para colocar o1..o7
-    str r3, [r2]
+    mov r0, r3
+    bl outport_write
     mov r3, #20
     mov r0, #SYSCLK_FREQ
     bl delay
     b init
 
 out_of_range:
-    mov r1, #0x80
-    str r1, [r2]
+    mov r0, #0x80
+    bl outport_write
     mov r3, #20
     mov r0, #SYSCLK_FREQ
     bl delay
@@ -161,13 +152,13 @@ outport_img_addr:
 
 inport_read:
 	ldr	r1, inport_addr
-	ldrb	r0, [r1, #0]
+	ldrb r0, [r1, #0]
 	mov	pc, lr
 
     
 outport_write:
 	ldr	r1, outport_addr
-	strb	r0, [r1, #0]
+	strb r0, [r1, #0]
 	mov	pc, lr
 
 outport_addr:
