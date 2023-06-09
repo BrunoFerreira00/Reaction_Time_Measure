@@ -36,11 +36,11 @@ isr_addr:
 	.text
 
 main:
-    bl reset
 	b init
 
 ;r1 temp
 init:
+    bl reset
     mov r0, #INITIAL_OUTPORT
     bl outport_write
     bl inport_read
@@ -69,7 +69,7 @@ delay_time:
     mov r1 , #0x0A
     cmp r1, r0
     blo init;3 bloco
-
+    bl reset
     push r0
     mov r0, #SYSCLK_FREQ
     bl ptc_init
@@ -78,7 +78,7 @@ delay_time:
 	orr	r0, r0, r1
 	msr	cpsr, r0
     pop r0
-    bl delay
+    bl delay_before
     mov r0, #0x00
     bl outport_write
     bl ptc_stop
@@ -87,12 +87,14 @@ delay_time:
     bl ptc_init
 
 time_measure:
+   ; bl reset
     bl inport_read
     mov r1, #0x01
     and r0, r0 , r1
     cmp r0, r1
     beq time_measure
     bl ptc_stop
+    
 
 fix_result:
     bl sysclk_get_ticks
@@ -116,7 +118,7 @@ negative:
     mov r0, #SYSCLK_FREQ
     bl ptc_init
     mov r0, #5
-    bl delay
+    bl delay_after
     b init
 
 positive:
@@ -128,7 +130,7 @@ positive:
     mov r0, #SYSCLK_FREQ
     bl ptc_init
     mov r0, #5 
-    bl delay
+    bl delay_after
     b init
 
 out_of_range:
@@ -139,7 +141,7 @@ out_of_range:
     mov r0, #SYSCLK_FREQ
     bl ptc_init
     mov r0, #5
-    bl delay
+    bl delay_after
     b init
 
 
@@ -228,16 +230,42 @@ sysclk_get_ticks:
     ldr    r0, [r0, #0]
     mov    pc, lr
 
-delay:
+delay_before:
     push lr
     lsl r1, r0, #2
-delay_loop:
+delay_loop_before:
+    bl user_break
    bl sysclk_get_ticks
    cmp r1, r0
-   bne delay_loop
-delay_end:
+   bne delay_loop_before
+delay_end_before:
     pop pc
 
+delay_after:
+    push lr
+    lsl r1, r0, #2
+delay_loop_after:
+   bl sysclk_get_ticks
+   cmp r1, r0
+   bne delay_loop_after
+delay_end_after:
+    pop pc
+
+PTC_ADDR:
+    .word    PTC_ADDRESS
+
+user_break:
+    push lr
+    push r1
+    push r0
+    bl inport_read
+    mov r1, #USER_MASk
+    and r0, r0, r1
+    cmp r0,r1
+    bne init
+    pop r0
+    pop r1
+    pop pc
 
 reset:
     ldr r1, sysclk_addr
@@ -248,8 +276,6 @@ reset:
 sysclk_addr:
     .word sysclk
 
-PTC_ADDR:
-    .word    PTC_ADDRESS
 
 
 ;----------------------------------------------------------------------------
