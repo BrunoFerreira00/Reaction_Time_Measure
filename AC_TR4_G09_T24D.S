@@ -3,7 +3,7 @@
     .equ USER_MASk, 0x01
     .equ INPORT_ADDRESS, 0xFF80
     .equ OUTPORT_ADDRESS, 0xFFC0
-	.equ PTC_ADDRESS,  0xFF78        ; Endereco do circuito pTC
+	.equ PTC_ADDRESS,  0xFF78          ; Endereco do circuito pTC
 
     .equ PTC_TCR, 0                    ; Deslocamento do registo TCR do pTC
 	.equ PTC_TMR, 2                    ; Deslocamento do registo TMR do pTC
@@ -12,10 +12,10 @@
 	.equ PTC_CMD_START, 0              ; Comando para iniciar a contagem no pTC
 	.equ PTC_CMD_STOP, 1               ; Comando para parar a contagem no pTC
 
-	.equ SYSCLK_FREQ, 0xFA             ; Intervalo de contagem do circuito pTC
-                                          ; que suporta a implementação do sysclk                          
+	.equ SYSCLK_FREQ, 249             ; Intervalo de contagem do circuito pTC
+                                       ; que suporta a implementação do sysclk                          
     .equ STACK_SIZE, 64                ; Dimensao do stack - 64 B
-    .equ CPSR_BIT_I, 0b010000          ; Mascara para o bit I do registo CPSR
+    .equ	CPSR_BIT_I, 0b010000         
 ;----------------------------------------------------------------------------
 
 	.section startup
@@ -36,15 +36,8 @@ isr_addr:
 	.text
 
 main:
-	mov	r0, #INITIAL_OUTPORT
-	bl	outport_init
-	mov	r0, #SYSCLK_FREQ
-	bl	ptc_init
-	mrs	r0, cpsr
-	mov	r1, #CPSR_BIT_I
-	orr	r0, r0, r1
-	msr	cpsr, r0
-
+    bl reset
+	b init
 
 ;r1 temp
 init:
@@ -58,7 +51,7 @@ init:
 
 
 check_USER:
-    bl inport_read
+    bl inport_read 
     mov r1, #USER_MASk
     and r0, r0, r1
     cmp r0, r1 ;2 bloco
@@ -68,74 +61,84 @@ check_USER:
 delay_time:
     mov r0, #0x01
     bl outport_write
-    bl inport_read
-    lsr r0 , r0 , #4
+    bl inport_read 
+    lsr r0 , r0 , #4 
     mov r1 , #0x01
     cmp r0 , r1
     blo init 
     mov r1 , #0x0A
     cmp r1, r0
     blo init;3 bloco
-    mov r3, #0
 
-multiplication:
-    add r3, r3, #4
-    sub r0, r0, #1
-    mov r1, #0
-    cmp r1, r0
-    bne multiplication
+    push r0
     mov r0, #SYSCLK_FREQ
+    bl ptc_init
+    mrs	r0, cpsr
+	mov	r1, #CPSR_BIT_I
+	orr	r0, r0, r1
+	msr	cpsr, r0
+    pop r0
     bl delay
-
-
-    mov r3, #0
     mov r0, #0x00
     bl outport_write
+    bl ptc_stop
+    bl reset
+    mov r0, #1  ;tempo de execuçao do p16 das funçoes "time_measure" + "isr"
+    bl ptc_init
+
 time_measure:
     bl inport_read
-    add r3, r3, #1
     mov r1, #0x01
     and r0, r0 , r1
     cmp r0, r1
     beq time_measure
+    bl ptc_stop
 
 fix_result:
+    bl sysclk_get_ticks
     mov r1, #0x89 ; 137 ms
-    cmp r1, r3
+    cmp r1, r0
     bge out_of_range
     mov r1, #0x07 
     movt r1, #0x01; 263 ms
-    cmp r3, r1
+    cmp r0, r1
     bge out_of_range
     mov r1, #0xC8 ; 200 ms
-    cmp r3, r1
+    cmp r0, r1
     bge positive
 
 negative:
-    sub r3, r3, r1
-    lsl r3, r3, #1 ;para colocar o1..o7
-    mov r0, r3
+    sub r0, r0, r1
+    lsl r0, r0, #1 ;para colocar o1..o7
     bl outport_write
-    mov r3, #20
+    bl ptc_stop
+    bl reset
     mov r0, #SYSCLK_FREQ
+    bl ptc_init
+    mov r0, #5
     bl delay
     b init
 
 positive:
-    sub r3, r3 , r1
-    lsl r3, r3, #1 ;para colocar o1..o7
-    mov r0, r3
+    sub r0, r0 , r1
+    lsl r0, r0, #1 ;para colocar o1..o7
     bl outport_write
-    mov r3, #20
+    bl ptc_stop
+    bl reset
     mov r0, #SYSCLK_FREQ
+    bl ptc_init
+    mov r0, #5 
     bl delay
     b init
 
 out_of_range:
     mov r0, #0x80
     bl outport_write
-    mov r3, #20
+    bl ptc_stop
+    bl reset
     mov r0, #SYSCLK_FREQ
+    bl ptc_init
+    mov r0, #5
     bl delay
     b init
 
@@ -225,35 +228,28 @@ sysclk_get_ticks:
     ldr    r0, [r0, #0]
     mov    pc, lr
 
+delay:
+    push lr
+    lsl r1, r0, #2
+delay_loop:
+   bl sysclk_get_ticks
+   cmp r1, r0
+   bne delay_loop
+delay_end:
+    pop pc
+
+
+reset:
+    ldr r1, sysclk_addr
+    mov r2, #0
+    str r2,[r1]
+    mov pc, lr
+
 sysclk_addr:
     .word sysclk
 
-delay:
-    mov r2 , #0
-    and r0, r0, r0
-    cmp r0, r2
-    beq delay_end
-delay_loop:
-    sub r0, r0, #1
-    cmp r0, r2
-    bne delay_loop
-    sub r3, r3, #1
-    cmp r3, r2
-    bne restart
-delay_end:
-    mov pc, lr
-
-
-restart:
-    mov r0 , #SYSCLK_FREQ
-    b delay
-
-
 PTC_ADDR:
     .word    PTC_ADDRESS
-
-
-
 
 
 ;----------------------------------------------------------------------------
