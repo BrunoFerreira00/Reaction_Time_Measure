@@ -1,4 +1,4 @@
-P16 assembler v1.4.0 (Mar  6 2023)	.\AC_TR4_G09_T24D.lst	Fri Jun 09 19:15:05 2023
+P16 assembler v1.4.0 (Mar  6 2023)	c:\Users\fbrun\Desktop\Programas_Universidade\2_semestre\arquitetura_computadores\AC_TR4\AC_TR4_G09_T24D.lst	Fri Jun 09 20:50:04 2023
 
 Sections
 Index   Name            Address   Size
@@ -102,266 +102,286 @@ Code listing
   35           	;---------------------------------------------------------------------------
   36           		.text
   37           	
-  38           	main:
-  39 000E 00 58		b init
-  40           	
-  41           	;r1 temp
-  42           	init:
-  43 0010 A4 5C	    bl reset
-  44 0012 F0 6F	    mov r0, #INITIAL_OUTPORT
-  45 0014 5B 5C	    bl outport_write
-  46 0016 57 5C	    bl inport_read
-  47 0018 11 60	    mov r1, #USER_MASk
-  48 001A 80 C0	    and r0, r0, r1
-  49 001C 80 B8	    cmp r0,r1 
-  50 001E F8 43	    beq init ;1 bloco
-  51           	
-  52           	
-  53           	check_USER:
-  54 0020 52 5C	    bl inport_read 
-  55 0022 11 60	    mov r1, #USER_MASk
-  56 0024 80 C0	    and r0, r0, r1
-  57 0026 80 B8	    cmp r0, r1 ;2 bloco
-  58 0028 FB 47	    bne check_USER;transiçao para o terceiro
-  59           	
-  60           	;r2 Delay Time
-  61           	delay_time:
-  62 002A 10 60	    mov r0, #0x01
-  63 002C 4F 5C	    bl outport_write
-  64 002E 4B 5C	    bl inport_read 
-  65 0030 00 EA	    lsr r0 , r0 , #4 
-  66 0032 11 60	    mov r1 , #0x01
-  67 0034 80 B8	    cmp r0 , r1
-  68 0036 EC 4B	    blo init 
-  69 0038 A1 60	    mov r1 , #0x0A
-  70 003A 10 B8	    cmp r1, r0
-  71 003C E9 4B	    blo init;3 bloco
-  72 003E 8D 5C	    bl reset
-  73 0040 00 24	    push r0
-  74 0042 90 6F	    mov r0, #SYSCLK_FREQ
-  75 0044 55 5C	    bl ptc_init
-  76 0046 60 B0	    mrs	r0, cpsr
-  77 0048 01 61		mov	r1, #CPSR_BIT_I
-  78 004A 80 C8		orr	r0, r0, r1
-  79 004C 40 B0		msr	cpsr, r0
-  80 004E 00 04	    pop r0
-  81 0050 6B 5C	    bl delay_before
-  82 0052 00 60	    mov r0, #0x00
-  83 0054 3B 5C	    bl outport_write
-  84 0056 46 5C	    bl ptc_stop
-  85 0058 80 5C	    bl reset
-  86 005A 10 60	    mov r0, #1  ;tempo de execuçao do p16 das funçoes "time_measure" + "isr"
-  87 005C 49 5C	    bl ptc_init
-  88           	
-  89           	time_measure:
-  90           	   ; bl reset
-  91 005E 33 5C	    bl inport_read
-  92 0060 11 60	    mov r1, #0x01
-  93 0062 80 C0	    and r0, r0 , r1
-  94 0064 80 B8	    cmp r0, r1
-  95 0066 FB 43	    beq time_measure
-  96 0068 3D 5C	    bl ptc_stop
-  97           	    
-  98           	
-  99           	fix_result:
- 100 006A 5B 5C	    bl sysclk_get_ticks
- 101 006C 91 68	    mov r1, #0x89 ; 137 ms
- 102 006E 10 B8	    cmp r1, r0
- 103 0070 1B 50	    bge out_of_range
- 104 0072 71 60	    mov r1, #0x07 
- 105 0074 11 70	    movt r1, #0x01; 263 ms
- 106 0076 80 B8	    cmp r0, r1
- 107 0078 17 50	    bge out_of_range
- 108 007A 81 6C	    mov r1, #0xC8 ; 200 ms
- 109 007C 80 B8	    cmp r0, r1
- 110 007E 0A 50	    bge positive
- 111           	
- 112           	negative:
- 113 0080 80 88	    sub r0, r0, r1
- 114 0082 80 E0	    lsl r0, r0, #1 ;para colocar o1..o7
- 115 0084 23 5C	    bl outport_write
- 116 0086 2E 5C	    bl ptc_stop
- 117 0088 68 5C	    bl reset
- 118 008A 90 6F	    mov r0, #SYSCLK_FREQ
- 119 008C 31 5C	    bl ptc_init
- 120 008E 50 60	    mov r0, #5
- 121 0090 52 5C	    bl delay_after
- 122 0092 BE 5B	    b init
- 123           	
- 124           	positive:
- 125 0094 80 88	    sub r0, r0 , r1
- 126 0096 80 E0	    lsl r0, r0, #1 ;para colocar o1..o7
- 127 0098 19 5C	    bl outport_write
- 128 009A 24 5C	    bl ptc_stop
- 129 009C 5E 5C	    bl reset
- 130 009E 90 6F	    mov r0, #SYSCLK_FREQ
- 131 00A0 27 5C	    bl ptc_init
- 132 00A2 50 60	    mov r0, #5 
- 133 00A4 48 5C	    bl delay_after
- 134 00A6 B4 5B	    b init
- 135           	
- 136           	out_of_range:
- 137 00A8 00 68	    mov r0, #0x80
- 138 00AA 10 5C	    bl outport_write
- 139 00AC 1B 5C	    bl ptc_stop
- 140 00AE 55 5C	    bl reset
- 141 00B0 90 6F	    mov r0, #SYSCLK_FREQ
- 142 00B2 1E 5C	    bl ptc_init
- 143 00B4 50 60	    mov r0, #5
- 144 00B6 3F 5C	    bl delay_after
- 145 00B8 AB 5B	    b init
- 146           	
- 147           	
- 148           	
- 149           	outport_init:
- 150 00BA 0E 24		push	lr
- 151 00BC 31 0C		ldr	r1, outport_img_addr
- 152 00BE 10 28		strb	r0, [r1]
- 153 00C0 05 5C		bl	outport_write
- 154 00C2 0F 04		pop	pc
- 155           	
- 156           	outport_img_addr:
- 157 00C4 66 01		.word	outport_img
+  38           	;Send code to init which is the start of the program
+  39           	main:
+  40 000E 00 58		b init
+  41           	
+  42           	;Start of the program
+  43           	;Activates all leds on outport and verifies if user is not set for it to progress
+  44           	init:
+  45 0010 A4 5C	    bl reset
+  46 0012 F0 6F	    mov r0, #INITIAL_OUTPORT
+  47 0014 5B 5C	    bl outport_write
+  48 0016 57 5C	    bl inport_read
+  49 0018 11 60	    mov r1, #USER_MASk
+  50 001A 80 C0	    and r0, r0, r1
+  51 001C 80 B8	    cmp r0,r1 
+  52 001E F8 43	    beq init ;1 bloco
+  53           	
+  54           	
+  55           	;Checks when user is set to 1 so the program can start to count
+  56           	check_USER:
+  57 0020 52 5C	    bl inport_read 
+  58 0022 11 60	    mov r1, #USER_MASk
+  59 0024 80 C0	    and r0, r0, r1
+  60 0026 80 B8	    cmp r0, r1 ;2 bloco
+  61 0028 FB 47	    bne check_USER;transiçao para o terceiro
+  62           	
+  63           	;reads the time the user sets in which after it the stimulus will turn off
+  64           	delay_time:
+  65 002A 10 60	    mov r0, #0x01
+  66 002C 4F 5C	    bl outport_write
+  67 002E 4B 5C	    bl inport_read 
+  68 0030 00 EA	    lsr r0 , r0 , #4 
+  69 0032 11 60	    mov r1 , #0x01
+  70 0034 80 B8	    cmp r0 , r1
+  71 0036 EC 4B	    blo init 
+  72 0038 A1 60	    mov r1 , #0x0A
+  73 003A 10 B8	    cmp r1, r0
+  74 003C E9 4B	    blo init
+  75 003E 8D 5C	    bl reset
+  76 0040 00 24	    push r0
+  77 0042 90 6F	    mov r0, #SYSCLK_FREQ
+  78 0044 55 5C	    bl ptc_init
+  79 0046 60 B0	    mrs	r0, cpsr
+  80 0048 01 61		mov	r1, #CPSR_BIT_I
+  81 004A 80 C8		orr	r0, r0, r1
+  82 004C 40 B0		msr	cpsr, r0
+  83 004E 00 04	    pop r0
+  84 0050 6B 5C	    bl delay_before
+  85 0052 00 60	    mov r0, #0x00
+  86 0054 3B 5C	    bl outport_write
+  87 0056 46 5C	    bl ptc_stop
+  88 0058 80 5C	    bl reset
+  89 005A 10 60	    mov r0, #1  ;time measure plus isr clocks divided by 50khz = 1,5
+  90 005C 49 5C	    bl ptc_init
+  91           	
+  92           	
+  93           	;Starts measuring the time the user takes to turn off the switch after stimulus turns off
+  94           	time_measure:
+  95 005E 33 5C	    bl inport_read
+  96 0060 11 60	    mov r1, #0x01
+  97 0062 80 C0	    and r0, r0 , r1
+  98 0064 80 B8	    cmp r0, r1
+  99 0066 FB 43	    beq time_measure
+ 100 0068 3D 5C	    bl ptc_stop
+ 101           	    
+ 102           	;compares the time the user took with the limits possible to see if it was out of range
+ 103           	fix_result:
+ 104 006A 5B 5C	    bl sysclk_get_ticks
+ 105 006C 91 68	    mov r1, #0x89 ; 137 ms
+ 106 006E 10 B8	    cmp r1, r0
+ 107 0070 1B 50	    bge out_of_range
+ 108 0072 71 60	    mov r1, #0x07 
+ 109 0074 11 70	    movt r1, #0x01; 263 ms
+ 110 0076 80 B8	    cmp r0, r1
+ 111 0078 17 50	    bge out_of_range
+ 112 007A 81 6C	    mov r1, #0xC8 ; 200 ms
+ 113 007C 80 B8	    cmp r0, r1
+ 114 007E 0A 50	    bge positive
+ 115           	
+ 116           	
+ 117           	;if it was below 200ms and in the range represents the difference beetween the time the user took with 200ms
+ 118           	;Set for the current position of the outport
+ 119           	negative:
+ 120 0080 80 88	    sub r0, r0, r1
+ 121 0082 80 E0	    lsl r0, r0, #1 
+ 122 0084 23 5C	    bl outport_write
+ 123 0086 2E 5C	    bl ptc_stop
+ 124 0088 68 5C	    bl reset
+ 125 008A 90 6F	    mov r0, #SYSCLK_FREQ
+ 126 008C 31 5C	    bl ptc_init
+ 127 008E 50 60	    mov r0, #5
+ 128 0090 52 5C	    bl delay_after
+ 129 0092 BE 5B	    b init
+ 130           	
+ 131           	
+ 132           	;if it was above 200ms and in the range represents the difference beetween the time the user took with 200ms
+ 133           	;Set for the current position of the outport
+ 134           	positive:
+ 135 0094 80 88	    sub r0, r0 , r1
+ 136 0096 80 E0	    lsl r0, r0, #1 ;para colocar o1..o7
+ 137 0098 19 5C	    bl outport_write
+ 138 009A 24 5C	    bl ptc_stop
+ 139 009C 5E 5C	    bl reset
+ 140 009E 90 6F	    mov r0, #SYSCLK_FREQ
+ 141 00A0 27 5C	    bl ptc_init
+ 142 00A2 50 60	    mov r0, #5 
+ 143 00A4 48 5C	    bl delay_after
+ 144 00A6 B4 5B	    b init
+ 145           	
+ 146           	;If the time the user took was out of range it will set the outport to -64
+ 147           	out_of_range:
+ 148 00A8 00 68	    mov r0, #0x80
+ 149 00AA 10 5C	    bl outport_write
+ 150 00AC 1B 5C	    bl ptc_stop
+ 151 00AE 55 5C	    bl reset
+ 152 00B0 90 6F	    mov r0, #SYSCLK_FREQ
+ 153 00B2 1E 5C	    bl ptc_init
+ 154 00B4 50 60	    mov r0, #5
+ 155 00B6 3F 5C	    bl delay_after
+ 156 00B8 AB 5B	    b init
+ 157           	
  158           	
- 159           	inport_read:
- 160 00C6 61 0C		ldr	r1, inport_addr
- 161 00C8 10 08		ldrb	r0, [r1, #0]
- 162 00CA 0F B7		mov	pc, lr
- 163           	
- 164           	    
- 165           	outport_write:
- 166 00CC 21 0C		ldr	r1, outport_addr
- 167 00CE 10 28		strb	r0, [r1, #0]
- 168 00D0 0F B7		mov	pc, lr
+ 159           	;initial outport
+ 160           	outport_init:
+ 161 00BA 0E 24		push	lr
+ 162 00BC 31 0C		ldr	r1, outport_img_addr
+ 163 00BE 10 28		strb	r0, [r1]
+ 164 00C0 05 5C		bl	outport_write
+ 165 00C2 0F 04		pop	pc
+ 166           	
+ 167           	outport_img_addr:
+ 168 00C4 66 01		.word	outport_img
  169           	
- 170           	outport_addr:
- 171 00D2 C0 FF	    .word OUTPORT_ADDRESS
- 172           	
- 173           	
- 174           	inport_addr:
- 175 00D4 80 FF	    .word INPORT_ADDRESS
- 176           	
- 177           	ptc_addr_addr:
- 178 00D6 42 01	    .word PTC_ADDR
- 179           	
- 180           	
+ 170           	;reads the inport
+ 171           	inport_read:
+ 172 00C6 61 0C		ldr	r1, inport_addr
+ 173 00C8 10 08		ldrb	r0, [r1, #0]
+ 174 00CA 0F B7		mov	pc, lr
+ 175           	
+ 176           	;writes the outport
+ 177           	outport_write:
+ 178 00CC 21 0C		ldr	r1, outport_addr
+ 179 00CE 10 28		strb	r0, [r1, #0]
+ 180 00D0 0F B7		mov	pc, lr
  181           	
- 182           	ptc_start:
- 183 00D8 00 24	    push r0
- 184 00DA 30 0F		ldr	r0, PTC_ADDR
- 185 00DC 01 60		mov	r1, #PTC_CMD_START
- 186 00DE 01 28		strb r1, [r0, #PTC_TCR]
- 187 00E0 00 04	    pop r0
- 188 00E2 0F B7		mov	pc, lr
- 189           	
- 190           	ptc_stop:
- 191 00E4 00 24	    push r0
- 192 00E6 D0 0E		ldr	r0, PTC_ADDR
- 193 00E8 11 60		mov	r1, #PTC_CMD_STOP
- 194 00EA 01 28		strb r1, [r0, #PTC_TCR]
- 195 00EC 00 04	    pop r0
- 196 00EE 0F B7		mov	pc, lr
- 197           	
- 198           	ptc_init:
- 199 00F0 0E 24		push lr
- 200 00F2 00 24	    push r0
- 201 00F4 04 24	    push r4
- 202 00F6 05 24		push r5
- 203 00F8 05 B0		mov r5, r0
- 204 00FA F4 5F	    bl ptc_stop
- 205 00FC 24 0E		ldr r4, PTC_ADDR
- 206 00FE 45 29		strb r5, [r4, #PTC_TMR]
- 207 0100 45 2B	    strb     r5, [r4, #PTC_TIR] ; limpar PTC TIR
- 208 0102 EA 5F	    bl ptc_start
- 209 0104 05 04		pop r5
- 210 0106 04 04		pop r4
- 211 0108 00 04	    pop r0
- 212 010A 0F 04	    pop pc
- 213           	
- 214           	isr:
- 215 010C 00 24	 	push    r0
- 216 010E 01 24	    push    r1
- 217           	    ; limpar PTC TIR
- 218 0110 80 0D	    ldr r0, PTC_ADDR
- 219 0112 00 2B	    strb r0, [r0, #PTC_TIR]
- 220 0114 60 0E	    ldr    r0, sysclk_addr
- 221 0116 01 00	    ldr    r1, [r0, #0]
- 222 0118 91 A0	    add    r1, r1, #1
- 223 011A 01 20	    str    r1, [r0, #0]
- 224 011C 01 04	    pop    r1
- 225 011E 00 04	    pop    r0
- 226 0120 20 B0	    movs    pc, lr
+ 182           	outport_addr:
+ 183 00D2 C0 FF	    .word OUTPORT_ADDRESS
+ 184           	
+ 185           	
+ 186           	inport_addr:
+ 187 00D4 80 FF	    .word INPORT_ADDRESS
+ 188           	
+ 189           	ptc_addr_addr:
+ 190 00D6 42 01	    .word PTC_ADDR
+ 191           	
+ 192           	
+ 193           	;starts the ptc
+ 194           	ptc_start:
+ 195 00D8 00 24	    push r0
+ 196 00DA 30 0F		ldr	r0, PTC_ADDR
+ 197 00DC 01 60		mov	r1, #PTC_CMD_START
+ 198 00DE 01 28		strb r1, [r0, #PTC_TCR]
+ 199 00E0 00 04	    pop r0
+ 200 00E2 0F B7		mov	pc, lr
+ 201           	
+ 202           	;stops the ptc
+ 203           	ptc_stop:
+ 204 00E4 00 24	    push r0
+ 205 00E6 D0 0E		ldr	r0, PTC_ADDR
+ 206 00E8 11 60		mov	r1, #PTC_CMD_STOP
+ 207 00EA 01 28		strb r1, [r0, #PTC_TCR]
+ 208 00EC 00 04	    pop r0
+ 209 00EE 0F B7		mov	pc, lr
+ 210           	
+ 211           	;initializes the ptc
+ 212           	ptc_init:
+ 213 00F0 0E 24		push lr
+ 214 00F2 00 24	    push r0
+ 215 00F4 04 24	    push r4
+ 216 00F6 05 24		push r5
+ 217 00F8 05 B0		mov r5, r0
+ 218 00FA F4 5F	    bl ptc_stop
+ 219 00FC 24 0E		ldr r4, PTC_ADDR
+ 220 00FE 45 29		strb r5, [r4, #PTC_TMR]
+ 221 0100 45 2B	    strb     r5, [r4, #PTC_TIR] ; limpar PTC TIR
+ 222 0102 EA 5F	    bl ptc_start
+ 223 0104 05 04		pop r5
+ 224 0106 04 04		pop r4
+ 225 0108 00 04	    pop r0
+ 226 010A 0F 04	    pop pc
  227           	
- 228           	sysclk_get_ticks:
- 229 0122 F0 0D		ldr    r0, sysclk_addr
- 230 0124 00 00	    ldr    r0, [r0, #0]
- 231 0126 0F B7	    mov    pc, lr
- 232           	
- 233           	delay_before:
- 234 0128 0E 24	    push lr
- 235 012A 01 E1	    lsl r1, r0, #2
- 236           	delay_loop_before:
- 237 012C 0B 5C	    bl user_break
- 238 012E F9 5F	   bl sysclk_get_ticks
- 239 0130 10 B8	   cmp r1, r0
- 240 0132 FC 47	   bne delay_loop_before
- 241           	delay_end_before:
- 242 0134 0F 04	    pop pc
- 243           	
- 244           	delay_after:
- 245 0136 0E 24	    push lr
- 246 0138 01 E1	    lsl r1, r0, #2
- 247           	delay_loop_after:
- 248 013A F3 5F	   bl sysclk_get_ticks
- 249 013C 10 B8	   cmp r1, r0
- 250 013E FD 47	   bne delay_loop_after
- 251           	delay_end_after:
- 252 0140 0F 04	    pop pc
- 253           	
- 254           	PTC_ADDR:
- 255 0142 78 FF	    .word    PTC_ADDRESS
- 256           	
- 257           	user_break:
- 258 0144 0E 24	    push lr
- 259 0146 01 24	    push r1
- 260 0148 00 24	    push r0
- 261 014A BD 5F	    bl inport_read
- 262 014C 11 60	    mov r1, #USER_MASk
- 263 014E 80 C0	    and r0, r0, r1
- 264 0150 80 B8	    cmp r0,r1
- 265 0152 5E 47	    bne init
- 266 0154 00 04	    pop r0
- 267 0156 01 04	    pop r1
- 268 0158 0F 04	    pop pc
- 269           	
- 270           	reset:
- 271 015A 31 0C	    ldr r1, sysclk_addr
- 272 015C 02 60	    mov r2, #0
- 273 015E 12 20	    str r2,[r1]
- 274 0160 0F B7	    mov pc, lr
- 275           	
- 276           	sysclk_addr:
- 277 0162 64 01	    .word sysclk
- 278           	
- 279           	
- 280           	
- 281           	;----------------------------------------------------------------------------
- 282           	
- 283           	    .data
- 284           	
- 285           	;----------------------------------------------------------------------------    
- 286           	
- 287           	    .bss
- 288           	sysclk:
- 289 0164 00   		.space	2
- 289 0165 00
- 290           	outport_img:
- 291 0166 00   		.space	1
- 292 0167 00  		.align
- 293           	;----------------------------------------------------------------------------
- 294           	
- 295           	    .stack
- 296 0168 00   	    .space STACK_SIZE
- 296 .... ..
- 296 01A7 00
- 297           	tos:
+ 228           	;interrupt service routine
+ 229           	isr:
+ 230 010C 00 24	 	push    r0
+ 231 010E 01 24	    push    r1
+ 232           	    ; limpar PTC TIR
+ 233 0110 80 0D	    ldr r0, PTC_ADDR
+ 234 0112 00 2B	    strb r0, [r0, #PTC_TIR]
+ 235 0114 60 0E	    ldr    r0, sysclk_addr
+ 236 0116 01 00	    ldr    r1, [r0, #0]
+ 237 0118 91 A0	    add    r1, r1, #1
+ 238 011A 01 20	    str    r1, [r0, #0]
+ 239 011C 01 04	    pop    r1
+ 240 011E 00 04	    pop    r0
+ 241 0120 20 B0	    movs    pc, lr
+ 242           	
+ 243           	;gets the ticks set
+ 244           	sysclk_get_ticks:
+ 245 0122 F0 0D		ldr    r0, sysclk_addr
+ 246 0124 00 00	    ldr    r0, [r0, #0]
+ 247 0126 0F B7	    mov    pc, lr
+ 248           	
+ 249           	;delay before stimulus turns off with correct value
+ 250           	delay_before:
+ 251 0128 0E 24	    push lr
+ 252 012A 01 E1	    lsl r1, r0, #2
+ 253           	delay_loop_before:
+ 254 012C 0B 5C	    bl user_break
+ 255 012E F9 5F	   bl sysclk_get_ticks
+ 256 0130 10 B8	   cmp r1, r0
+ 257 0132 FC 47	   bne delay_loop_before
+ 258           	delay_end_before:
+ 259 0134 0F 04	    pop pc
+ 260           	
+ 261           	;delay for showing the result for 5 seconds
+ 262           	delay_after:
+ 263 0136 0E 24	    push lr
+ 264 0138 01 E1	    lsl r1, r0, #2
+ 265           	delay_loop_after:
+ 266 013A F3 5F	   bl sysclk_get_ticks
+ 267 013C 10 B8	   cmp r1, r0
+ 268 013E FD 47	   bne delay_loop_after
+ 269           	delay_end_after:
+ 270 0140 0F 04	    pop pc
+ 271           	
+ 272           	PTC_ADDR:
+ 273 0142 78 FF	    .word    PTC_ADDRESS
+ 274           	
+ 275           	;checks if the user is set to 1 , if it's not returns to the start of the program
+ 276           	user_break:
+ 277 0144 0E 24	    push lr
+ 278 0146 01 24	    push r1
+ 279 0148 00 24	    push r0
+ 280 014A BD 5F	    bl inport_read
+ 281 014C 11 60	    mov r1, #USER_MASk
+ 282 014E 80 C0	    and r0, r0, r1
+ 283 0150 80 B8	    cmp r0,r1
+ 284 0152 5E 47	    bne init
+ 285 0154 00 04	    pop r0
+ 286 0156 01 04	    pop r1
+ 287 0158 0F 04	    pop pc
+ 288           	
+ 289           	;resets the sysclk
+ 290           	reset:
+ 291 015A 31 0C	    ldr r1, sysclk_addr
+ 292 015C 02 60	    mov r2, #0
+ 293 015E 12 20	    str r2,[r1]
+ 294 0160 0F B7	    mov pc, lr
+ 295           	
+ 296           	sysclk_addr:
+ 297 0162 64 01	    .word sysclk
+ 298           	
+ 299           	
+ 300           	
+ 301           	;----------------------------------------------------------------------------
+ 302           	
+ 303           	    .data
+ 304           	
+ 305           	;----------------------------------------------------------------------------    
+ 306           	
+ 307           	    .bss
+ 308           	sysclk:
+ 309 0164 00   		.space	2
+ 309 0165 00
+ 310           	outport_img:
+ 311 0166 00   		.space	1
+ 312 0167 00  		.align
+ 313           	;----------------------------------------------------------------------------
+ 314           	
+ 315           	    .stack
+ 316 0168 00   	    .space STACK_SIZE
+ 316 .... ..
+ 316 01A7 00
+ 317           	tos:

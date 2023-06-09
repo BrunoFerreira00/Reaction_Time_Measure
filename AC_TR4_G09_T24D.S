@@ -35,10 +35,12 @@ isr_addr:
 ;---------------------------------------------------------------------------
 	.text
 
+;Send code to init which is the start of the program
 main:
 	b init
 
-;r1 temp
+;Start of the program
+;Activates all leds on outport and verifies if user is not set for it to progress
 init:
     bl reset
     mov r0, #INITIAL_OUTPORT
@@ -50,6 +52,7 @@ init:
     beq init ;1 bloco
 
 
+;Checks when user is set to 1 so the program can start to count
 check_USER:
     bl inport_read 
     mov r1, #USER_MASk
@@ -57,7 +60,7 @@ check_USER:
     cmp r0, r1 ;2 bloco
     bne check_USER;transiçao para o terceiro
 
-;r2 Delay Time
+;reads the time the user sets in which after it the stimulus will turn off
 delay_time:
     mov r0, #0x01
     bl outport_write
@@ -68,7 +71,7 @@ delay_time:
     blo init 
     mov r1 , #0x0A
     cmp r1, r0
-    blo init;3 bloco
+    blo init
     bl reset
     push r0
     mov r0, #SYSCLK_FREQ
@@ -83,11 +86,12 @@ delay_time:
     bl outport_write
     bl ptc_stop
     bl reset
-    mov r0, #1  ;tempo de execuçao do p16 das funçoes "time_measure" + "isr"
+    mov r0, #1  ;time measure plus isr clocks divided by 50khz = 1,5
     bl ptc_init
 
+
+;Starts measuring the time the user takes to turn off the switch after stimulus turns off
 time_measure:
-   ; bl reset
     bl inport_read
     mov r1, #0x01
     and r0, r0 , r1
@@ -95,7 +99,7 @@ time_measure:
     beq time_measure
     bl ptc_stop
     
-
+;compares the time the user took with the limits possible to see if it was out of range
 fix_result:
     bl sysclk_get_ticks
     mov r1, #0x89 ; 137 ms
@@ -109,9 +113,12 @@ fix_result:
     cmp r0, r1
     bge positive
 
+
+;if it was below 200ms and in the range represents the difference beetween the time the user took with 200ms
+;Set for the current position of the outport
 negative:
     sub r0, r0, r1
-    lsl r0, r0, #1 ;para colocar o1..o7
+    lsl r0, r0, #1 
     bl outport_write
     bl ptc_stop
     bl reset
@@ -121,6 +128,9 @@ negative:
     bl delay_after
     b init
 
+
+;if it was above 200ms and in the range represents the difference beetween the time the user took with 200ms
+;Set for the current position of the outport
 positive:
     sub r0, r0 , r1
     lsl r0, r0, #1 ;para colocar o1..o7
@@ -133,6 +143,7 @@ positive:
     bl delay_after
     b init
 
+;If the time the user took was out of range it will set the outport to -64
 out_of_range:
     mov r0, #0x80
     bl outport_write
@@ -145,7 +156,7 @@ out_of_range:
     b init
 
 
-
+;initial outport
 outport_init:
 	push	lr
 	ldr	r1, outport_img_addr
@@ -156,12 +167,13 @@ outport_init:
 outport_img_addr:
 	.word	outport_img
 
+;reads the inport
 inport_read:
 	ldr	r1, inport_addr
 	ldrb	r0, [r1, #0]
 	mov	pc, lr
 
-    
+;writes the outport
 outport_write:
 	ldr	r1, outport_addr
 	strb	r0, [r1, #0]
@@ -178,7 +190,7 @@ ptc_addr_addr:
     .word PTC_ADDR
 
 
-
+;starts the ptc
 ptc_start:
     push r0
 	ldr	r0, PTC_ADDR
@@ -187,6 +199,7 @@ ptc_start:
     pop r0
 	mov	pc, lr
 
+;stops the ptc
 ptc_stop:
     push r0
 	ldr	r0, PTC_ADDR
@@ -195,6 +208,7 @@ ptc_stop:
     pop r0
 	mov	pc, lr
 
+;initializes the ptc
 ptc_init:
 	push lr
     push r0
@@ -211,6 +225,7 @@ ptc_init:
     pop r0
     pop pc
 
+;interrupt service routine
 isr:
  	push    r0
     push    r1
@@ -225,11 +240,13 @@ isr:
     pop    r0
     movs    pc, lr
 
+;gets the ticks set
 sysclk_get_ticks:
 	ldr    r0, sysclk_addr
     ldr    r0, [r0, #0]
     mov    pc, lr
 
+;delay before stimulus turns off with correct value
 delay_before:
     push lr
     lsl r1, r0, #2
@@ -241,6 +258,7 @@ delay_loop_before:
 delay_end_before:
     pop pc
 
+;delay for showing the result for 5 seconds
 delay_after:
     push lr
     lsl r1, r0, #2
@@ -254,6 +272,7 @@ delay_end_after:
 PTC_ADDR:
     .word    PTC_ADDRESS
 
+;checks if the user is set to 1 , if it's not returns to the start of the program
 user_break:
     push lr
     push r1
@@ -267,6 +286,7 @@ user_break:
     pop r1
     pop pc
 
+;resets the sysclk
 reset:
     ldr r1, sysclk_addr
     mov r2, #0
