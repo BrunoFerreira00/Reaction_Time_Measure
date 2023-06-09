@@ -1,4 +1,5 @@
     .equ INITIAL_OUTPORT, 0xFF
+    .equ INITIAL_USER, 0x00
     .equ USER_MASk, 0x01
     .equ INPORT_ADDRESS, 0xFF80
     .equ OUTPORT_ADDRESS, 0xFFC0
@@ -55,43 +56,43 @@ init:
     cmp r0,r1 
     beq init ;1 bloco
 
+
 check_USER:
     bl inport_read
     mov r1, #USER_MASk
     and r0, r0, r1
     cmp r0, r1 ;2 bloco
-    bne check_USER ;transiçao para o terceiro
-
+    bne check_USER;transiçao para o terceiro
 
 ;r2 Delay Time
 delay_time:
     mov r0, #0x01
     bl outport_write
     bl inport_read
-    mov r2 , r0
-    lsr r2 , r2 , #4
-    mov r1 , #0x00
-    cmp r1 , r2
-    bhs init
-    mov r1 , #0x0B
-    cmp r2, r1
-    bhs init;3 bloco
+    lsr r0 , r0 , #4
+    mov r1 , #0x01
+    cmp r0 , r1
+    blo init 
+    mov r1 , #0x0A
+    cmp r1, r0
+    blo init;3 bloco
     mov r3, #0
 
 multiplication:
     add r3, r3, #4
-    sub r2, r2, #1
+    sub r0, r0, #1
     mov r1, #0
-    cmp r2, r1
+    cmp r1, r0
     bne multiplication
     mov r0, #SYSCLK_FREQ
     bl delay
+
+
     mov r3, #0
     mov r0, #0x00
     bl outport_write
-
 time_measure:
-    bl inport_read 
+    bl inport_read
     add r3, r3, #1
     mov r1, #0x01
     and r0, r0 , r1
@@ -101,11 +102,11 @@ time_measure:
 fix_result:
     mov r1, #0x89 ; 137 ms
     cmp r1, r3
-    bhs out_of_range
+    bge out_of_range
     mov r1, #0x07 
     movt r1, #0x01; 263 ms
     cmp r3, r1
-    bhs out_of_range
+    bge out_of_range
     mov r1, #0xC8 ; 200 ms
     cmp r3, r1
     bge positive
@@ -152,13 +153,13 @@ outport_img_addr:
 
 inport_read:
 	ldr	r1, inport_addr
-	ldrb r0, [r1, #0]
+	ldrb	r0, [r1, #0]
 	mov	pc, lr
 
     
 outport_write:
 	ldr	r1, outport_addr
-	strb r0, [r1, #0]
+	strb	r0, [r1, #0]
 	mov	pc, lr
 
 outport_addr:
@@ -241,6 +242,7 @@ delay_loop:
     bne restart
 delay_end:
     mov pc, lr
+
 
 restart:
     mov r0 , #SYSCLK_FREQ
