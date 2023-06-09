@@ -3,18 +3,18 @@
     .equ USER_MASk, 0x01
     .equ INPORT_ADDRESS, 0xFF80
     .equ OUTPORT_ADDRESS, 0xFFC0
-	.equ PTC_ADDRESS,  0xFF78          ; Endereco do circuito pTC
+	.equ PTC_ADDRESS,  0xFF78         
 
-    .equ PTC_TCR, 0                    ; Deslocamento do registo TCR do pTC
-	.equ PTC_TMR, 2                    ; Deslocamento do registo TMR do pTC
-	.equ PTC_TC,  4                    ; Deslocamento do registo TC do pTC
-	.equ PTC_TIR, 6                    ; Deslocamento do registo TIR do pTC
-	.equ PTC_CMD_START, 0              ; Comando para iniciar a contagem no pTC
-	.equ PTC_CMD_STOP, 1               ; Comando para parar a contagem no pTC
+    .equ PTC_TCR, 0                   
+	.equ PTC_TMR, 2                   
+	.equ PTC_TC,  4                   
+	.equ PTC_TIR, 6                   
+	.equ PTC_CMD_START, 0             
+	.equ PTC_CMD_STOP, 1              
 
-	.equ SYSCLK_FREQ, 249             ; Intervalo de contagem do circuito pTC
-                                       ; que suporta a implementação do sysclk                          
-    .equ STACK_SIZE, 64                ; Dimensao do stack - 64 B
+	.equ SYSCLK_FREQ, 249             
+                                                                
+    .equ STACK_SIZE, 64                
     .equ	CPSR_BIT_I, 0b010000         
 ;----------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ init:
     mov r1, #USER_MASk
     and r0, r0, r1
     cmp r0,r1 
-    beq init ;1 bloco
+    beq init 
 
 
 ;Checks when user is set to 1 so the program can start to count
@@ -57,8 +57,8 @@ check_USER:
     bl inport_read 
     mov r1, #USER_MASk
     and r0, r0, r1
-    cmp r0, r1 ;2 bloco
-    bne check_USER;transiçao para o terceiro
+    cmp r0, r1                   
+    bne check_USER               
 
 ;reads the time the user sets in which after it the stimulus will turn off
 delay_time:
@@ -133,7 +133,7 @@ negative:
 ;Set for the current position of the outport
 positive:
     sub r0, r0 , r1
-    lsl r0, r0, #1 ;para colocar o1..o7
+    lsl r0, r0, #1 
     bl outport_write
     bl ptc_stop
     bl reset
@@ -218,7 +218,7 @@ ptc_init:
     bl ptc_stop
 	ldr r4, PTC_ADDR
 	strb r5, [r4, #PTC_TMR]
-    strb     r5, [r4, #PTC_TIR] ; limpar PTC TIR
+    strb     r5, [r4, #PTC_TIR] 
     bl ptc_start
 	pop r5
 	pop r4
@@ -229,7 +229,6 @@ ptc_init:
 isr:
  	push    r0
     push    r1
-    ; limpar PTC TIR
     ldr r0, PTC_ADDR
     strb r0, [r0, #PTC_TIR]
     ldr    r0, sysclk_addr
